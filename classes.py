@@ -9,14 +9,15 @@ class RequestType(enum.Enum):
 
 
 class Server:
-    def __init__(self, link: str, current_version: str, server_routes: dict = None) -> None:
+    def __init__(self, link: str, current_version: str, server_routes: dict = None, directory=None) -> None:
         self.link: str = link
         self.version: str = current_version
         self.changes: list = []
+        self.directory = directory
         if not server_routes:
             self.server_routes: dict = {
                 "/latest_version": self.latest_version,
-                "/changes": self.changes,
+                "/changes": self.get_changes,
                 "/download_latest": self.download_latest
             }
 
@@ -25,7 +26,7 @@ class Server:
             server_route = self.server_routes["/latest_version"]
         return self.version
 
-    def changes(self, server_route=None):
+    def get_changes(self, server_route=None):
         if not server_route:
             server_route = self.server_routes["/changes"]
         pass
@@ -34,6 +35,10 @@ class Server:
         if not server_route:
             server_route = self.server_routes["/download_latest"]
         pass
+
+    def add_version(self, directory, version):
+        self.version = version
+        self.directory = directory
 
 
 class Client:
@@ -44,7 +49,7 @@ class Client:
         if not server_routes:
             self.server_routes: dict = {
                 "/latest_version": self.latest_version,
-                "/changes": self.changes,
+                "/changes": self.get_changes,
                 "/download_latest": self.download_latest
             }
 
@@ -56,7 +61,7 @@ class Client:
         r = requests.get("{}/{}".format(self.link, server_route))
         return parser(r)
 
-    def changes(self, server_route=None, parser: Callable = None):
+    def get_changes(self, server_route=None, parser: Callable = None):
         if not server_route:
             server_route = self.server_routes["/changes"]
         if not parser:
